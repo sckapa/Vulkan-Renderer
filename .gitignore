@@ -1,0 +1,7 @@
+.vs/
+bin/
+bin-int/
+
+*.idb
+*.pdb
+Core.lib
