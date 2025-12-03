@@ -12,6 +12,16 @@ namespace sckVK
 	{
 		printf("\n");
 
+		PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = VK_NULL_HANDLE;
+		vkDestroySurfaceKHR = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(m_VkInstance, "vkDestroySurfaceKHR");
+		if (!vkDestroySurfaceKHR)
+		{
+			printf("Cannot find address of vkDestroySurfaceKHR\n");
+			exit(1);
+		}
+		vkDestroySurfaceKHR(m_VkInstance, m_VkSurface, nullptr);
+		printf("GLFW Window Surface Destroyed\n");
+
 		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessenger = VK_NULL_HANDLE;
 		vkDestroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_VkInstance, "vkDestroyDebugUtilsMessengerEXT");
 		if (!vkDestroyDebugUtilsMessenger)
@@ -26,10 +36,11 @@ namespace sckVK
 		printf("Vulkan Instance Destroyed\n");
 	}
 
-	void VulkanCore::Init(const char* appName)
+	void VulkanCore::Init(const char* appName, GLFWwindow* window)
 	{
 		CreateInstance(appName);
 		CreateDebugCallback();
+		CreateSurface(window);
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)
@@ -125,5 +136,13 @@ namespace sckVK
 		CHECK_VK_RESULT(res, "Debug Utils Messenger");
 
 		printf("Debug Utils Messenger Created\n");
+	}
+
+	void VulkanCore::CreateSurface(GLFWwindow* window)
+	{
+		VkResult res = glfwCreateWindowSurface(m_VkInstance, window, nullptr, &m_VkSurface);
+		CHECK_VK_RESULT(res, "GLFW Window Surface");
+
+		printf("GLFW Window Surface Created\n");
 	}
 }
