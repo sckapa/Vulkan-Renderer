@@ -14,7 +14,9 @@ namespace sckVK
 
 	private:
 		void CreateInstance(const char* appName);
+		void CreateDebugCallback();
 
-		VkInstance m_VkInstance = nullptr;
+		VkInstance m_VkInstance = VK_NULL_HANDLE;
+		VkDebugUtilsMessengerEXT m_VkDebugMessenger = VK_NULL_HANDLE;
 	};
 }

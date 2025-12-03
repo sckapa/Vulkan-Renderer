@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core.cpp" />
+    <ClCompile Include="SckVK_Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SckVK_Core.h" />

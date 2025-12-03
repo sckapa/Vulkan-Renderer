@@ -10,3 +10,6 @@
 		fprintf(stderr, "Error in %s:%d - %s, code %x\n", __FILE__, __LINE__, msg, res); \
 		exit(1); \
 	}
+
+const char* MessageSeverity(VkDebugUtilsMessageSeverityFlagBitsEXT severity);
+const char* MessageType(VkDebugUtilsMessageTypeFlagsEXT type);
