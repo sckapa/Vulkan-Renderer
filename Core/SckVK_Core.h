@@ -1,7 +1,8 @@
 #pragma once
 
-#include "SckVK_Utils.h"
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include "SckVK_VulkanPhysicalDevices.h"
 
 namespace sckVK
 {
@@ -21,5 +22,7 @@ namespace sckVK
 		VkInstance m_VkInstance = VK_NULL_HANDLE;
 		VkDebugUtilsMessengerEXT m_VkDebugMessenger = VK_NULL_HANDLE;
 		VkSurfaceKHR m_VkSurface = VK_NULL_HANDLE;
+		VulkanPhysicalDevices m_VulkanPhysicalDevices;
+		uint32_t m_queueFamily = 0;
 	};
 }

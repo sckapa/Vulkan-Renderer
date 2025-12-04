@@ -1,6 +1,5 @@
 #include "SckVK_Core.h"
 #include <vulkan/vulkan.h>
-#include <vector>
 
 namespace sckVK
 {
@@ -41,6 +40,8 @@ namespace sckVK
 		CreateInstance(appName);
 		CreateDebugCallback();
 		CreateSurface(window);
+		m_VulkanPhysicalDevices.Init(m_VkInstance, m_VkSurface);
+		m_queueFamily = m_VulkanPhysicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)

@@ -21,12 +21,18 @@
     <ClCompile Include="SckVK_Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VulkanPhysicalDevices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SckVK_Core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SckVK_Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SckVK_VulkanPhysicalDevices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

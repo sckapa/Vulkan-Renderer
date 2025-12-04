@@ -149,10 +149,12 @@
   <ItemGroup>
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="SckVK_Utils.cpp" />
+    <ClCompile Include="VulkanPhysicalDevices.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SckVK_Core.h" />
     <ClInclude Include="SckVK_Utils.h" />
+    <ClInclude Include="SckVK_VulkanPhysicalDevices.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
