@@ -11,6 +11,9 @@ namespace sckVK
 	{
 		printf("\n");
 
+		vkDestroyDevice(m_device, nullptr);
+		printf("Logical Device Destroyed\n");
+
 		PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = VK_NULL_HANDLE;
 		vkDestroySurfaceKHR = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(m_VkInstance, "vkDestroySurfaceKHR");
 		if (!vkDestroySurfaceKHR)
@@ -42,6 +45,7 @@ namespace sckVK
 		CreateSurface(window);
 		m_VulkanPhysicalDevices.Init(m_VkInstance, m_VkSurface);
 		m_queueFamily = m_VulkanPhysicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
+		CreateDevice();
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)
@@ -96,15 +100,17 @@ namespace sckVK
 		const VkDebugUtilsMessengerCallbackDataEXT*		 pCallbackData,
 		void*											 pUserData)
 	{
-		printf("Debug Callback : %s", pCallbackData->pMessage);
-		printf("Severity : %s", MessageSeverity(messageSeverity));
-		printf("Type : %s", MessageType(messageTypes));
+		printf("Debug Callback : %s\n", pCallbackData->pMessage);
+		printf("Severity : %s\n", MessageSeverity(messageSeverity));
+		printf("Type : %s\n", MessageType(messageTypes));
 		printf(" Objects ");
 
 		for (uint32_t i = 0; i < pCallbackData->objectCount; i++)
 		{
-			printf("%llx", pCallbackData->pObjects[i].objectHandle);
+			printf("%llx\n", pCallbackData->pObjects[i].objectHandle);
 		}
+
+		printf("\n");
 
 		return VK_FALSE; // The calling function should not be aborted
 	}
@@ -145,5 +151,58 @@ namespace sckVK
 		CHECK_VK_RESULT(res, "GLFW Window Surface");
 
 		printf("GLFW Window Surface Created\n");
+	}
+
+	void VulkanCore::CreateDevice()
+	{
+		float priorities[] = { 1.0f };
+
+		VkDeviceQueueCreateInfo deviceQueueCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.queueFamilyIndex = m_queueFamily,
+			.queueCount = 1,
+			.pQueuePriorities = &priorities[0]
+		};
+
+		std::vector<const char*> extensionNames = {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+			VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
+		};
+
+		if (!(m_VulkanPhysicalDevices.SelectedDevice().m_physicalDeviceFeatures.geometryShader == VK_TRUE))
+		{
+			printf("Geometry shader is not enabled!");
+			exit(1);
+		}
+		
+		if (!(m_VulkanPhysicalDevices.SelectedDevice().m_physicalDeviceFeatures.tessellationShader == VK_TRUE))
+		{
+			printf("Tessellation shader is not enabled!");
+			exit(1);
+		}
+
+		VkPhysicalDeviceFeatures physicalDeviceFeatures = { 0 };
+		physicalDeviceFeatures.geometryShader = VK_TRUE;
+		physicalDeviceFeatures.tessellationShader = VK_TRUE;
+
+		VkDeviceCreateInfo deviceCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.queueCreateInfoCount = 1,
+			.pQueueCreateInfos = &deviceQueueCreateInfo,
+			.enabledLayerCount = 0,			// DEPRECATED
+			.ppEnabledLayerNames = nullptr,	// DEPRECATED
+			.enabledExtensionCount = (uint32_t)extensionNames.size(),
+			.ppEnabledExtensionNames = extensionNames.data(),
+			.pEnabledFeatures = &physicalDeviceFeatures
+		};
+
+		VkResult res = vkCreateDevice(m_VulkanPhysicalDevices.SelectedDevice().m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
+		CHECK_VK_RESULT(res, "vkCreateDevice error\n");
+
+		printf("Logical Device Created\n");
 	}
 }

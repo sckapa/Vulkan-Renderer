@@ -15,6 +15,7 @@ namespace sckVK
 		VkSurfaceCapabilitiesKHR m_surfaceCapabilities;
 		VkPhysicalDeviceMemoryProperties m_memoryProps;
 		std::vector<VkPresentModeKHR> m_presentModes;
+		VkPhysicalDeviceFeatures m_physicalDeviceFeatures;
 	};
 
 	class VulkanPhysicalDevices

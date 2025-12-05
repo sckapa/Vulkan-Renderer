@@ -18,11 +18,13 @@ namespace sckVK
 		void CreateInstance(const char* appName);
 		void CreateDebugCallback();
 		void CreateSurface(GLFWwindow* window);
+		void CreateDevice();
 
 		VkInstance m_VkInstance = VK_NULL_HANDLE;
 		VkDebugUtilsMessengerEXT m_VkDebugMessenger = VK_NULL_HANDLE;
 		VkSurfaceKHR m_VkSurface = VK_NULL_HANDLE;
 		VulkanPhysicalDevices m_VulkanPhysicalDevices;
 		uint32_t m_queueFamily = 0;
+		VkDevice m_device = VK_NULL_HANDLE;
 	};
 }

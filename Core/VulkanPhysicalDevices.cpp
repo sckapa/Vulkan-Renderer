@@ -23,12 +23,14 @@ namespace sckVK
 		res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, PhyDevices.data());
 		CHECK_VK_RESULT(res, "vkEnumeratePhysicalDevices error\n");
 
+		printf("Available graphics devices : \n");
 		for (uint32_t i = 0; i < numPhysicalDevices; i++)
 		{
 			VkPhysicalDevice PhysicalDevice = PhyDevices[i];
 			m_physicalDevices[i].m_physicalDevice = PhysicalDevice;
 
 			vkGetPhysicalDeviceProperties(PhysicalDevice, &m_physicalDevices[i].m_physicalDeviceProps);
+			printf("  %s\n", m_physicalDevices[i].m_physicalDeviceProps.deviceName);
 
 			uint32_t numQueueProperties;
 			vkGetPhysicalDeviceQueueFamilyProperties(PhysicalDevice, &numQueueProperties, nullptr);
@@ -44,6 +46,7 @@ namespace sckVK
 				CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfaceSupportKHR error\n");
 			}
 
+
 			res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(PhysicalDevice, surface, &(m_physicalDevices[i].m_surfaceCapabilities));
 			CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR error\n");
 
@@ -57,6 +60,8 @@ namespace sckVK
 
 			res = vkGetPhysicalDeviceSurfacePresentModesKHR(PhysicalDevice, surface, &numSurfacePresentModes, m_physicalDevices[i].m_presentModes.data());
 			CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfacePresentModesKHR error\n");
+
+			vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_physicalDevices[i].m_physicalDeviceFeatures);
 		}
 	}
 
