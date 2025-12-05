@@ -19,6 +19,7 @@ namespace sckVK
 		void CreateDebugCallback();
 		void CreateSurface(GLFWwindow* window);
 		void CreateDevice();
+		void CreateSwapchain();
 
 		VkInstance m_VkInstance = VK_NULL_HANDLE;
 		VkDebugUtilsMessengerEXT m_VkDebugMessenger = VK_NULL_HANDLE;
@@ -26,5 +27,8 @@ namespace sckVK
 		VulkanPhysicalDevices m_VulkanPhysicalDevices;
 		uint32_t m_queueFamily = 0;
 		VkDevice m_device = VK_NULL_HANDLE;
+		VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
+		std::vector<VkImage> m_Images;
+		std::vector<VkImageView> m_ImageViews;
 	};
 }

@@ -62,6 +62,13 @@ namespace sckVK
 			CHECK_VK_RESULT(res, "vkGetPhysicalDeviceSurfacePresentModesKHR error\n");
 
 			vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_physicalDevices[i].m_physicalDeviceFeatures);
+
+			uint32_t surfaceFormatCount = 0;
+			vkGetPhysicalDeviceSurfaceFormatsKHR(PhysicalDevice, surface, &surfaceFormatCount, nullptr);
+
+			m_physicalDevices[i].m_surfaceFormats.resize(surfaceFormatCount);
+
+			vkGetPhysicalDeviceSurfaceFormatsKHR(PhysicalDevice, surface, &surfaceFormatCount, m_physicalDevices[i].m_surfaceFormats.data());
 		}
 	}
 

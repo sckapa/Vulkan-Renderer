@@ -11,6 +11,15 @@ namespace sckVK
 	{
 		printf("\n");
 
+		for (uint32_t i = 0; i < m_Images.size(); i++)
+		{
+			vkDestroyImageView(m_device, m_ImageViews[i], nullptr);
+		}
+		printf("Image Views Destroyed\n");
+
+		vkDestroySwapchainKHR(m_device, m_Swapchain, nullptr);
+		printf("Swapchain Destroyed\n");
+
 		vkDestroyDevice(m_device, nullptr);
 		printf("Logical Device Destroyed\n");
 
@@ -46,6 +55,7 @@ namespace sckVK
 		m_VulkanPhysicalDevices.Init(m_VkInstance, m_VkSurface);
 		m_queueFamily = m_VulkanPhysicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 		CreateDevice();
+		CreateSwapchain();
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)
@@ -204,5 +214,139 @@ namespace sckVK
 		CHECK_VK_RESULT(res, "vkCreateDevice error\n");
 
 		printf("Logical Device Created\n");
+	}
+
+	static VkSurfaceFormatKHR ChooseSurfaceFormatAndColorSpace(const std::vector<VkSurfaceFormatKHR>& surfaceFormats)
+	{
+		for (uint32_t i = 0; i < surfaceFormats.size(); i++)
+		{
+			if ((surfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) &&
+				(surfaceFormats[i].format == VK_FORMAT_R8G8B8A8_SRGB))
+			{
+				return surfaceFormats[i];
+			}
+		}
+
+		return surfaceFormats[0];
+	}
+
+	static VkPresentModeKHR ChoosePresentationMode(const std::vector<VkPresentModeKHR>& presentationModes)
+	{
+		for (uint32_t i = 0; i < presentationModes.size(); i++)
+		{
+			if (presentationModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+			{
+				return presentationModes[i];
+			}
+		}
+
+		return VK_PRESENT_MODE_FIFO_KHR;
+	}
+
+	static uint32_t SelectNumberOfImages(const VkSurfaceCapabilitiesKHR& surfaceCaps)
+	{
+		uint32_t NumImg = surfaceCaps.minImageCount + 1;
+
+		if ((NumImg < surfaceCaps.maxImageCount) && (surfaceCaps.maxImageCount > 0))
+		{
+			return NumImg;
+		}
+		else
+		{
+			return surfaceCaps.maxImageCount;
+		}
+	}
+
+	static VkImageView CreateImageView(VkDevice device, VkImage image, VkImageViewType viewType, VkFormat format,
+										VkImageAspectFlags aspectFlags, uint32_t levelCount, uint32_t layerCount)
+	{
+		VkImageView imageView;
+
+		VkImageViewCreateInfo imageViewCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.image = image,
+			.viewType = viewType,
+			.format = format,
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_R,
+				.g = VK_COMPONENT_SWIZZLE_G,
+				.b = VK_COMPONENT_SWIZZLE_B,
+				.a = VK_COMPONENT_SWIZZLE_A
+			},
+			.subresourceRange = {
+				.aspectMask = aspectFlags,
+				.baseMipLevel = 0,
+				.levelCount = levelCount,
+				.baseArrayLayer = 0,
+				.layerCount = layerCount
+			}
+		};
+
+		VkResult res = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageView);
+		CHECK_VK_RESULT(res, "vkCreateImageView error\n");
+
+		return imageView;
+	}
+
+	void VulkanCore::CreateSwapchain()
+	{
+		VkSurfaceCapabilitiesKHR surfaceCaps = m_VulkanPhysicalDevices.SelectedDevice().m_surfaceCapabilities;
+		uint32_t NumImages = SelectNumberOfImages(surfaceCaps);
+
+		VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormatAndColorSpace(m_VulkanPhysicalDevices.SelectedDevice().m_surfaceFormats);
+
+		VkPresentModeKHR presentMode = ChoosePresentationMode(m_VulkanPhysicalDevices.SelectedDevice().m_presentModes);
+
+		VkSwapchainCreateInfoKHR swapchainCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+			.pNext = nullptr,
+			.flags = 0,
+			.surface = m_VkSurface,
+			.minImageCount = NumImages,
+			.imageFormat = surfaceFormat.format,
+			.imageColorSpace = surfaceFormat.colorSpace,
+			.imageExtent = surfaceCaps.currentExtent,
+			.imageArrayLayers = 1,
+			.imageUsage = (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+			.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.queueFamilyIndexCount = 1,
+			.pQueueFamilyIndices = &m_queueFamily,
+			.preTransform = surfaceCaps.currentTransform,
+			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+			.presentMode = presentMode,
+			.clipped = VK_TRUE
+		};
+
+		VkResult res = vkCreateSwapchainKHR(m_device, &swapchainCreateInfo, nullptr, &m_Swapchain);
+		CHECK_VK_RESULT(res, "vkCreateSwapchainKHR error\n");
+
+		printf("Swapchain Created\n");
+
+		uint32_t SwapchainImageNumber = 0;
+		res = vkGetSwapchainImagesKHR(m_device, m_Swapchain, &SwapchainImageNumber, nullptr);
+		CHECK_VK_RESULT(res, "vkGetSwapchainImagesKHR error\n");
+
+		if (NumImages != SwapchainImageNumber)
+		{
+			printf("Swapchain images could not be allocated\n");
+			exit(1);
+		}
+
+		m_Images.resize(SwapchainImageNumber);
+		m_ImageViews.resize(SwapchainImageNumber);
+
+		res = vkGetSwapchainImagesKHR(m_device, m_Swapchain, &SwapchainImageNumber, m_Images.data());
+		CHECK_VK_RESULT(res, "vkGetSwapchainImagesKHR error\n");
+
+		uint32_t mipLevel = 1;
+		uint32_t layerCount = 1;
+		for (uint32_t i = 0; i < m_Images.size(); i++)
+		{
+			m_ImageViews[i] = CreateImageView(m_device, m_Images[i], VK_IMAGE_VIEW_TYPE_2D, surfaceFormat.format,
+												VK_IMAGE_ASPECT_COLOR_BIT, mipLevel, layerCount);
+		}
+		printf("Image Views Created\n");
 	}
 }
