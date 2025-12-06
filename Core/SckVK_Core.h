@@ -14,12 +14,20 @@ namespace sckVK
 
 		void Init(const char* appName, GLFWwindow* window);
 
+		uint32_t GetSwapchainImageCount();
+
+		void CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
+		void FreeCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
+
 	private:
 		void CreateInstance(const char* appName);
 		void CreateDebugCallback();
 		void CreateSurface(GLFWwindow* window);
 		void CreateDevice();
 		void CreateSwapchain();
+		void CreateCommandBufferPool();
+
+		uint32_t m_swapchainImageCount = 0;
 
 		VkInstance m_VkInstance = VK_NULL_HANDLE;
 		VkDebugUtilsMessengerEXT m_VkDebugMessenger = VK_NULL_HANDLE;
@@ -30,5 +38,6 @@ namespace sckVK
 		VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
 		std::vector<VkImage> m_Images;
 		std::vector<VkImageView> m_ImageViews;
+		VkCommandPool m_VkCommandPool = VK_NULL_HANDLE;
 	};
 }

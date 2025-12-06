@@ -9,7 +9,8 @@ namespace sckVK
 
 	VulkanCore::~VulkanCore()
 	{
-		printf("\n");
+		vkDestroyCommandPool(m_device, m_VkCommandPool, nullptr);
+		printf("Command Buffer Pool Destroyed\n");
 
 		for (uint32_t i = 0; i < m_Images.size(); i++)
 		{
@@ -56,6 +57,34 @@ namespace sckVK
 		m_queueFamily = m_VulkanPhysicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
 		CreateDevice();
 		CreateSwapchain();
+		CreateCommandBufferPool();
+	}
+
+	uint32_t VulkanCore::GetSwapchainImageCount()
+	{
+		return m_swapchainImageCount;
+	}
+
+	void VulkanCore::CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers)
+	{
+		VkCommandBufferAllocateInfo commandBufferAllocateInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.pNext = nullptr,
+			.commandPool = m_VkCommandPool,
+			.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+			.commandBufferCount = count
+		};
+
+		VkResult res = vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, cmdBuffers);
+		CHECK_VK_RESULT(res, "vkAllocateCommandBuffers error\n");
+
+		printf("Command Buffers Created\n");
+	}
+
+	void VulkanCore::FreeCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers)
+	{
+		vkFreeCommandBuffers(m_device, m_VkCommandPool, count, cmdBuffers);
+		printf("Command Buffers Destroyed\n");
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)
@@ -293,7 +322,7 @@ namespace sckVK
 	void VulkanCore::CreateSwapchain()
 	{
 		VkSurfaceCapabilitiesKHR surfaceCaps = m_VulkanPhysicalDevices.SelectedDevice().m_surfaceCapabilities;
-		uint32_t NumImages = SelectNumberOfImages(surfaceCaps);
+		m_swapchainImageCount = SelectNumberOfImages(surfaceCaps);
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormatAndColorSpace(m_VulkanPhysicalDevices.SelectedDevice().m_surfaceFormats);
 
@@ -304,7 +333,7 @@ namespace sckVK
 			.pNext = nullptr,
 			.flags = 0,
 			.surface = m_VkSurface,
-			.minImageCount = NumImages,
+			.minImageCount = m_swapchainImageCount,
 			.imageFormat = surfaceFormat.format,
 			.imageColorSpace = surfaceFormat.colorSpace,
 			.imageExtent = surfaceCaps.currentExtent,
@@ -328,7 +357,7 @@ namespace sckVK
 		res = vkGetSwapchainImagesKHR(m_device, m_Swapchain, &SwapchainImageNumber, nullptr);
 		CHECK_VK_RESULT(res, "vkGetSwapchainImagesKHR error\n");
 
-		if (NumImages != SwapchainImageNumber)
+		if (m_swapchainImageCount != SwapchainImageNumber)
 		{
 			printf("Swapchain images could not be allocated\n");
 			exit(1);
@@ -348,5 +377,20 @@ namespace sckVK
 												VK_IMAGE_ASPECT_COLOR_BIT, mipLevel, layerCount);
 		}
 		printf("Image Views Created\n");
+	}
+
+	void VulkanCore::CreateCommandBufferPool()
+	{
+		VkCommandPoolCreateInfo commandPoolCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.queueFamilyIndex = m_queueFamily
+		};
+
+		VkResult res = vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_VkCommandPool);
+		CHECK_VK_RESULT(res, "vkCreateCommandPool error\n");
+
+		printf("Command Buffer Pool Created\n");
 	}
 }
