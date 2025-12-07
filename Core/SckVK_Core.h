@@ -15,6 +15,7 @@ namespace sckVK
 		void Init(const char* appName, GLFWwindow* window);
 
 		uint32_t GetSwapchainImageCount();
+		VkImage GetImage(uint32_t imgNumber);
 
 		void CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
 		void FreeCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);

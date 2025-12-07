@@ -65,6 +65,11 @@ namespace sckVK
 		return m_swapchainImageCount;
 	}
 
+	VkImage VulkanCore::GetImage(uint32_t imgNumber)
+	{
+		return m_Images[imgNumber];
+	}
+
 	void VulkanCore::CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers)
 	{
 		VkCommandBufferAllocateInfo commandBufferAllocateInfo = {

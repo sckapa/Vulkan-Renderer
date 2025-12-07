@@ -16,6 +16,7 @@ public:
 private:
 	void CreateCommandBuffers();
 	void FreeCommandBuffers();
+	void RecordCommandBuffers();
 
 	sckVK::VulkanCore m_vkCore;
 	uint32_t m_imageCount = 0;
