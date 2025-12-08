@@ -5,4 +5,6 @@
 namespace sckVK 
 {
 	void BeginCommandBuffer(VkCommandBuffer cmdBuffer, VkCommandBufferUsageFlags usageFlags);
+
+	VkSemaphore CreateSemaphore(VkDevice device);
 }

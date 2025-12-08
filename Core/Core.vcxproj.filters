@@ -27,6 +27,9 @@
     <ClCompile Include="Wrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VulkanQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SckVK_Core.h">
@@ -38,7 +41,10 @@
     <ClInclude Include="SckVK_VulkanPhysicalDevices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SckVk_Wrapper.h">
+    <ClInclude Include="SckVK_Wrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SckVK_VulkanQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

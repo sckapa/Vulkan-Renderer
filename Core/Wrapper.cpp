@@ -1,4 +1,4 @@
-#include "SckVk_Wrapper.h"
+#include "SckVK_Wrapper.h"
 
 namespace sckVK
 {
@@ -13,5 +13,19 @@ namespace sckVK
 
 		VkResult res = vkBeginCommandBuffer(cmdBuffer, &commandBufferBeginInfo);
 		CHECK_VK_RESULT(res, "vkBeginCommandBuffer error\n");
+	}
+
+	VkSemaphore CreateSemaphore(VkDevice device)
+	{
+		VkSemaphoreCreateInfo semaphoreCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0
+		};
+
+		VkSemaphore semaphore;
+		VkResult res = vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphore);
+		CHECK_VK_RESULT(res, "vkCreateSemaphore error\n");
+		return semaphore;
 	}
 }

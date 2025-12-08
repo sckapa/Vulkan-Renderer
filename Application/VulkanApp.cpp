@@ -1,5 +1,5 @@
 #include "VulkanApp.h"
-#include "SckVk_Wrapper.h"
+#include "SckVK_Wrapper.h"
 
 VulkanApp::VulkanApp()
 {
@@ -18,10 +18,16 @@ void VulkanApp::Init(const char* appName, GLFWwindow* window)
 	m_imageCount = m_vkCore.GetSwapchainImageCount();
 	CreateCommandBuffers();
 	RecordCommandBuffers();
+	m_vulkanQueue = m_vkCore.GetQueue();
 }
 
 void VulkanApp::RenderScene()
 {
+	uint32_t imgIndex = m_vulkanQueue->AcquireNextImage();
+
+	m_vulkanQueue->SubmitAsync(m_commandBuffers[imgIndex]);
+
+	m_vulkanQueue->Present(imgIndex);
 }
 
 void VulkanApp::CreateCommandBuffers()
@@ -49,7 +55,7 @@ void VulkanApp::RecordCommandBuffers()
 
 	for (uint32_t i = 0; i < m_commandBuffers.size(); i++)
 	{
-		sckVK::BeginCommandBuffer(m_commandBuffers[i], 0);
+		sckVK::BeginCommandBuffer(m_commandBuffers[i], VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
 		vkCmdClearColorImage(m_commandBuffers[i], m_vkCore.GetImage(i), VK_IMAGE_LAYOUT_GENERAL, &clearColorValue, 1, &imageSubresourceRange);
 

@@ -150,13 +150,15 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="SckVK_Utils.cpp" />
     <ClCompile Include="VulkanPhysicalDevices.cpp" />
+    <ClCompile Include="VulkanQueue.cpp" />
     <ClCompile Include="Wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SckVK_Core.h" />
     <ClInclude Include="SckVK_Utils.h" />
     <ClInclude Include="SckVK_VulkanPhysicalDevices.h" />
-    <ClInclude Include="SckVk_Wrapper.h" />
+    <ClInclude Include="SckVK_VulkanQueue.h" />
+    <ClInclude Include="SckVK_Wrapper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

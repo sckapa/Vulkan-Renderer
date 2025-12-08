@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "SckVK_VulkanPhysicalDevices.h"
+#include "SckVK_VulkanQueue.h"
 
 namespace sckVK
 {
@@ -15,7 +16,9 @@ namespace sckVK
 		void Init(const char* appName, GLFWwindow* window);
 
 		uint32_t GetSwapchainImageCount();
-		VkImage GetImage(uint32_t imgNumber);
+		VkImage& GetImage(uint32_t imgNumber);
+
+		VulkanQueue* GetQueue();
 
 		void CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
 		void FreeCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
@@ -40,5 +43,6 @@ namespace sckVK
 		std::vector<VkImage> m_Images;
 		std::vector<VkImageView> m_ImageViews;
 		VkCommandPool m_VkCommandPool = VK_NULL_HANDLE;
+		sckVK::VulkanQueue m_vkQueue;
 	};
 }

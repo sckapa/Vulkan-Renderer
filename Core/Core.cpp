@@ -58,6 +58,7 @@ namespace sckVK
 		CreateDevice();
 		CreateSwapchain();
 		CreateCommandBufferPool();
+		m_vkQueue.Init(m_device, m_Swapchain, m_queueFamily, 0);
 	}
 
 	uint32_t VulkanCore::GetSwapchainImageCount()
@@ -65,9 +66,14 @@ namespace sckVK
 		return m_swapchainImageCount;
 	}
 
-	VkImage VulkanCore::GetImage(uint32_t imgNumber)
+	VkImage& VulkanCore::GetImage(uint32_t imgNumber)
 	{
 		return m_Images[imgNumber];
+	}
+
+	VulkanQueue* VulkanCore::GetQueue()
+	{
+		return &m_vkQueue;
 	}
 
 	void VulkanCore::CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers)
