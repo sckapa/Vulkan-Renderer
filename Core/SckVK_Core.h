@@ -1,5 +1,8 @@
 #pragma once
 
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "SckVK_VulkanPhysicalDevices.h"
@@ -20,8 +23,13 @@ namespace sckVK
 
 		VulkanQueue* GetQueue();
 
+		VkDevice GetDevice();
+
 		void CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
 		void FreeCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
+
+		VkRenderPass CreateRenderPass();
+		std::vector<VkFramebuffer> CreateFrameBuffers(VkRenderPass renderPass);
 
 	private:
 		void CreateInstance(const char* appName);
@@ -44,5 +52,7 @@ namespace sckVK
 		std::vector<VkImageView> m_ImageViews;
 		VkCommandPool m_VkCommandPool = VK_NULL_HANDLE;
 		sckVK::VulkanQueue m_vkQueue;
+		VkSurfaceFormatKHR m_swapchainSurfaceFormat;
+		std::vector<VkFramebuffer> m_frameBuffers;
 	};
 }

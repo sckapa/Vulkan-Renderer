@@ -6,8 +6,6 @@
 #include "VulkanApp.h"
 #include <iostream>
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
 #define APP_NAME "Vulkan Renderer"
 
 GLFWwindow* window = nullptr;

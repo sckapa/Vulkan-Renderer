@@ -31,6 +31,8 @@ namespace sckVK
 	{
 		m_presentCompleteSemaphore = CreateSemaphore(m_device);
 		m_renderCompleteSemaphore = CreateSemaphore(m_device);
+
+		printf("Semaphores Created\n");
 	}
 
 	uint32_t VulkanQueue::AcquireNextImage()

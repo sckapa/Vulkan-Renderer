@@ -76,6 +76,11 @@ namespace sckVK
 		return &m_vkQueue;
 	}
 
+	VkDevice VulkanCore::GetDevice()
+	{
+		return m_device;
+	}
+
 	void VulkanCore::CreateCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers)
 	{
 		VkCommandBufferAllocateInfo commandBufferAllocateInfo = {
@@ -96,6 +101,87 @@ namespace sckVK
 	{
 		vkFreeCommandBuffers(m_device, m_VkCommandPool, count, cmdBuffers);
 		printf("Command Buffers Destroyed\n");
+	}
+
+	VkRenderPass VulkanCore::CreateRenderPass()
+	{
+		VkAttachmentDescription attachmentDescription = {
+			.flags = 0,
+			.format = m_swapchainSurfaceFormat.format,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		};
+
+		VkAttachmentReference attachmentReference = {
+			.attachment = 0,
+			.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		};
+
+		VkSubpassDescription subpassDescription = {
+			.flags = 0,
+			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+			.inputAttachmentCount = 0,
+			.pInputAttachments = nullptr,
+			.colorAttachmentCount = 1,
+			.pColorAttachments = &attachmentReference,
+			.pResolveAttachments = nullptr,
+			.pDepthStencilAttachment = nullptr,
+			.preserveAttachmentCount = 0,
+			.pPreserveAttachments = nullptr
+		};
+
+		VkRenderPassCreateInfo renderPassCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.attachmentCount = 1,
+			.pAttachments = &attachmentDescription,
+			.subpassCount = 1,
+			.pSubpasses = &subpassDescription,
+			.dependencyCount = 0,
+			.pDependencies = VK_NULL_HANDLE
+		};
+
+		VkRenderPass RenderPass;
+
+		VkResult res = vkCreateRenderPass(m_device, &renderPassCreateInfo, nullptr, &RenderPass);
+		CHECK_VK_RESULT(res, "vkCreateRenderPass error\n");
+
+		printf("Render Pass Created");
+
+		return RenderPass;
+	}
+
+	std::vector<VkFramebuffer> VulkanCore::CreateFrameBuffers(VkRenderPass renderPass)
+	{
+		m_frameBuffers.resize(m_ImageViews.size());
+
+		VkResult res;
+
+		for (uint32_t i = 0; i < m_ImageViews.size(); i++)
+		{
+			VkFramebufferCreateInfo framebufferCreateInfo = {
+				.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+				.pNext = nullptr,
+				.flags = 0,
+				.renderPass = renderPass,
+				.attachmentCount = 1,
+				.pAttachments = &m_ImageViews[i],
+				.width = WINDOW_WIDTH,
+				.height = WINDOW_HEIGHT,
+				.layers = 1
+			};
+
+			res = vkCreateFramebuffer(m_device, &framebufferCreateInfo, nullptr, &m_frameBuffers[i]);
+			CHECK_VK_RESULT(res, "vkCreateFramebuffer error\n");
+		}
+
+		return m_frameBuffers;
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)
@@ -335,7 +421,7 @@ namespace sckVK
 		VkSurfaceCapabilitiesKHR surfaceCaps = m_VulkanPhysicalDevices.SelectedDevice().m_surfaceCapabilities;
 		m_swapchainImageCount = SelectNumberOfImages(surfaceCaps);
 
-		VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormatAndColorSpace(m_VulkanPhysicalDevices.SelectedDevice().m_surfaceFormats);
+		m_swapchainSurfaceFormat = ChooseSurfaceFormatAndColorSpace(m_VulkanPhysicalDevices.SelectedDevice().m_surfaceFormats);
 
 		VkPresentModeKHR presentMode = ChoosePresentationMode(m_VulkanPhysicalDevices.SelectedDevice().m_presentModes);
 
@@ -345,8 +431,8 @@ namespace sckVK
 			.flags = 0,
 			.surface = m_VkSurface,
 			.minImageCount = m_swapchainImageCount,
-			.imageFormat = surfaceFormat.format,
-			.imageColorSpace = surfaceFormat.colorSpace,
+			.imageFormat = m_swapchainSurfaceFormat.format,
+			.imageColorSpace = m_swapchainSurfaceFormat.colorSpace,
 			.imageExtent = surfaceCaps.currentExtent,
 			.imageArrayLayers = 1,
 			.imageUsage = (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
@@ -384,7 +470,7 @@ namespace sckVK
 		uint32_t layerCount = 1;
 		for (uint32_t i = 0; i < m_Images.size(); i++)
 		{
-			m_ImageViews[i] = CreateImageView(m_device, m_Images[i], VK_IMAGE_VIEW_TYPE_2D, surfaceFormat.format,
+			m_ImageViews[i] = CreateImageView(m_device, m_Images[i], VK_IMAGE_VIEW_TYPE_2D, m_swapchainSurfaceFormat.format,
 												VK_IMAGE_ASPECT_COLOR_BIT, mipLevel, layerCount);
 		}
 		printf("Image Views Created\n");

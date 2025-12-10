@@ -22,5 +22,7 @@ private:
 	uint32_t m_imageCount = 0;
 	std::vector<VkCommandBuffer> m_commandBuffers;
 	sckVK::VulkanQueue* m_vulkanQueue = nullptr;
+	VkRenderPass m_renderPass;
+	std::vector<VkFramebuffer> m_frameBuffers;
 };
 
