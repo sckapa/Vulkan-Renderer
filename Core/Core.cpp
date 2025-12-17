@@ -9,6 +9,9 @@ namespace sckVK
 
 	VulkanCore::~VulkanCore()
 	{
+		m_vkQueue.DestroySemaphores();
+		printf("Semaphores Destroyed\n");
+
 		vkDestroyCommandPool(m_device, m_VkCommandPool, nullptr);
 		printf("Command Buffer Pool Destroyed\n");
 
@@ -99,8 +102,8 @@ namespace sckVK
 
 	void VulkanCore::FreeCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers)
 	{
+		m_vkQueue.WaitIdle();
 		vkFreeCommandBuffers(m_device, m_VkCommandPool, count, cmdBuffers);
-		printf("Command Buffers Destroyed\n");
 	}
 
 	VkRenderPass VulkanCore::CreateRenderPass()
@@ -144,7 +147,7 @@ namespace sckVK
 			.subpassCount = 1,
 			.pSubpasses = &subpassDescription,
 			.dependencyCount = 0,
-			.pDependencies = VK_NULL_HANDLE
+			.pDependencies = nullptr
 		};
 
 		VkRenderPass RenderPass;
@@ -152,7 +155,7 @@ namespace sckVK
 		VkResult res = vkCreateRenderPass(m_device, &renderPassCreateInfo, nullptr, &RenderPass);
 		CHECK_VK_RESULT(res, "vkCreateRenderPass error\n");
 
-		printf("Render Pass Created");
+		printf("Render Pass Created\n");
 
 		return RenderPass;
 	}
@@ -181,7 +184,17 @@ namespace sckVK
 			CHECK_VK_RESULT(res, "vkCreateFramebuffer error\n");
 		}
 
+		printf("Frame Buffers created\n");
+
 		return m_frameBuffers;
+	}
+
+	void VulkanCore::DestroyFrameBuffers()
+	{
+		for (uint32_t i = 0; i < m_frameBuffers.size(); i++)
+		{
+			vkDestroyFramebuffer(m_device, m_frameBuffers[i], nullptr);
+		}
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)

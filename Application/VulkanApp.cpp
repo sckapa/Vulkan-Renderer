@@ -1,5 +1,4 @@
 #include "VulkanApp.h"
-#include "SckVK_Wrapper.h"
 
 VulkanApp::VulkanApp()
 {
@@ -10,18 +9,36 @@ VulkanApp::~VulkanApp()
 	printf("\n");
 
 	FreeCommandBuffers();
+	printf("Command Buffers Destroyed\n");
+
+	m_vkCore.DestroyFrameBuffers();
+	printf("Frame Buffers Destroyed\n");
+
+	vkDestroyShaderModule(m_vkCore.GetDevice(), m_fragmentShader, nullptr);
+	printf("Fragment Shader Destroyed\n");
+
+	vkDestroyShaderModule(m_vkCore.GetDevice(), m_vertexShader, nullptr);
+	printf("Vertex Shader Destroyed\n");
+
+	delete m_graphicsPipeline;
+
 	vkDestroyRenderPass(m_vkCore.GetDevice(), m_renderPass, nullptr);
+	printf("Render Pass Destroyed\n");
 }
 
 void VulkanApp::Init(const char* appName, GLFWwindow* window)
 {
+	m_window = window;
+
 	m_vkCore.Init(appName, window);
 	m_imageCount = m_vkCore.GetSwapchainImageCount();
+	m_vulkanQueue = m_vkCore.GetQueue();
 	m_renderPass = m_vkCore.CreateRenderPass();
 	m_frameBuffers = m_vkCore.CreateFrameBuffers(m_renderPass);
+	CreateShaders();
+	CreatePipeline();
 	CreateCommandBuffers();
 	RecordCommandBuffers();
-	m_vulkanQueue = m_vkCore.GetQueue();
 }
 
 void VulkanApp::RenderScene()
@@ -52,14 +69,6 @@ void VulkanApp::RecordCommandBuffers()
 		.color = clearColorValue
 	};
 
-	VkImageSubresourceRange imageSubresourceRange = {
-		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = 1
-	};
-
 	VkRenderPassBeginInfo renderPassBeginInfo = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 		.pNext = nullptr,
@@ -88,11 +97,33 @@ void VulkanApp::RecordCommandBuffers()
 
 		vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdClearColorImage(m_commandBuffers[i], m_vkCore.GetImage(i), VK_IMAGE_LAYOUT_GENERAL, &clearColorValue, 1, &imageSubresourceRange);
+		m_graphicsPipeline->Bind(m_commandBuffers[i]);
+
+		uint32_t vertexCount = 3;
+		uint32_t instanceCount = 1;
+		uint32_t firstVertex = 0;
+		uint32_t firstInstance = 0;
+
+		vkCmdDraw(m_commandBuffers[i], vertexCount, instanceCount, firstVertex, firstInstance);
+
+		vkCmdEndRenderPass(m_commandBuffers[i]);
 
 		VkResult res = vkEndCommandBuffer(m_commandBuffers[i]);
 		CHECK_VK_RESULT(res, "vkEndCommandBuffer error\n");
 	}
 
 	printf("Clear command recorded\n");
+}
+
+void VulkanApp::CreateShaders()
+{
+	m_vertexShader = sckVK::CreateShaderModuleFromText(m_vkCore.GetDevice(), "test.vert");
+	printf("Vertex Shader Created\n");
+	m_fragmentShader = sckVK::CreateShaderModuleFromText(m_vkCore.GetDevice(), "test.frag");
+	printf("Fragment Shader Created\n");
+}
+
+void VulkanApp::CreatePipeline()
+{
+	m_graphicsPipeline = new sckVK::VulkanGraphicsPipeline(m_vkCore.GetDevice(), m_renderPass, m_window, m_fragmentShader, m_vertexShader);
 }

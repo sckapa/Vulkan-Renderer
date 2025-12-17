@@ -1,12 +1,14 @@
 #pragma once
 
 #include "SckVK_Core.h"
+#include "SckVK_Wrapper.h"
+#include "SckVK_Shader.h"
+#include "SckVK_VulkanGraphicsPipeline.h"
 #include <GLFW/glfw3.h>
 
 class VulkanApp
 {
 public:
-
 	VulkanApp();
 	~VulkanApp();
 
@@ -17,6 +19,10 @@ private:
 	void CreateCommandBuffers();
 	void FreeCommandBuffers();
 	void RecordCommandBuffers();
+	void CreateShaders();
+	void CreatePipeline();
+
+	GLFWwindow* m_window = nullptr;
 
 	sckVK::VulkanCore m_vkCore;
 	uint32_t m_imageCount = 0;
@@ -24,5 +30,8 @@ private:
 	sckVK::VulkanQueue* m_vulkanQueue = nullptr;
 	VkRenderPass m_renderPass;
 	std::vector<VkFramebuffer> m_frameBuffers;
+	VkShaderModule m_vertexShader;
+	VkShaderModule m_fragmentShader;
+	sckVK::VulkanGraphicsPipeline* m_graphicsPipeline = nullptr;
 };
 

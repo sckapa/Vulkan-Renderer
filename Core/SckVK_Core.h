@@ -29,7 +29,9 @@ namespace sckVK
 		void FreeCommandBuffers(uint32_t count, VkCommandBuffer* cmdBuffers);
 
 		VkRenderPass CreateRenderPass();
+
 		std::vector<VkFramebuffer> CreateFrameBuffers(VkRenderPass renderPass);
+		void DestroyFrameBuffers();
 
 	private:
 		void CreateInstance(const char* appName);

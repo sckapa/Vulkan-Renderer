@@ -29,7 +29,7 @@ namespace sckVK
 		VkQueue m_queue = VK_NULL_HANDLE;
 		VkDevice m_device = VK_NULL_HANDLE;
 		VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
-		VkSemaphore m_renderCompleteSemaphore;
-		VkSemaphore m_presentCompleteSemaphore;
+		VkSemaphore m_renderCompleteSemaphore = VK_NULL_HANDLE;
+		VkSemaphore m_presentCompleteSemaphore = VK_NULL_HANDLE;
 	};
 }
