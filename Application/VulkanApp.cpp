@@ -24,6 +24,8 @@ VulkanApp::~VulkanApp()
 
 	vkDestroyRenderPass(m_vkCore.GetDevice(), m_renderPass, nullptr);
 	printf("Render Pass Destroyed\n");
+
+	m_simpleMesh.Destroy(m_vkCore.GetDevice());
 }
 
 void VulkanApp::Init(const char* appName, GLFWwindow* window)
@@ -36,6 +38,7 @@ void VulkanApp::Init(const char* appName, GLFWwindow* window)
 	m_renderPass = m_vkCore.CreateRenderPass();
 	m_frameBuffers = m_vkCore.CreateFrameBuffers(m_renderPass);
 	CreateShaders();
+	CreateVertexBuffer();
 	CreatePipeline();
 	CreateCommandBuffers();
 	RecordCommandBuffers();
@@ -46,6 +49,8 @@ void VulkanApp::RenderScene()
 	uint32_t imgIndex = m_vulkanQueue->AcquireNextImage();
 
 	m_vulkanQueue->SubmitAsync(m_commandBuffers[imgIndex]);
+
+	m_vulkanQueue->WaitIdle();
 
 	m_vulkanQueue->Present(imgIndex);
 }
@@ -126,4 +131,30 @@ void VulkanApp::CreateShaders()
 void VulkanApp::CreatePipeline()
 {
 	m_graphicsPipeline = new sckVK::VulkanGraphicsPipeline(m_vkCore.GetDevice(), m_renderPass, m_window, m_fragmentShader, m_vertexShader);
+}
+
+void VulkanApp::CreateVertexBuffer()
+{
+	struct Vertex
+	{
+	public:
+		Vertex(const glm::vec3& pos, const glm::vec2& tex)
+		{
+			position = pos;
+			texCoord = tex;
+		}
+
+		glm::vec3 position;
+		glm::vec2 texCoord;
+	};
+
+	std::vector<Vertex> vertices =
+	{
+		Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+		Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}),
+		Vertex({0.0f, 1.0f, 0.0f}, {1.0f, 1.0f})
+	};
+
+	m_simpleMesh.m_vertexBufferSize = sizeof(vertices[0]) * vertices.size();
+	m_simpleMesh.m_vertexBuffer = m_vkCore.CreateVertexBuffer(&vertices, m_simpleMesh.m_vertexBufferSize);
 }

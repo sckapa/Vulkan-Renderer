@@ -12,6 +12,8 @@ namespace sckVK
 		m_vkQueue.DestroySemaphores();
 		printf("Semaphores Destroyed\n");
 
+		vkFreeCommandBuffers(m_device, m_VkCommandPool, 1, &m_copyCommandBuffer);
+
 		vkDestroyCommandPool(m_device, m_VkCommandPool, nullptr);
 		printf("Command Buffer Pool Destroyed\n");
 
@@ -62,6 +64,7 @@ namespace sckVK
 		CreateSwapchain();
 		CreateCommandBufferPool();
 		m_vkQueue.Init(m_device, m_Swapchain, m_queueFamily, 0);
+		CreateCommandBuffers(1, &m_copyCommandBuffer);
 	}
 
 	uint32_t VulkanCore::GetSwapchainImageCount()
@@ -195,6 +198,32 @@ namespace sckVK
 		{
 			vkDestroyFramebuffer(m_device, m_frameBuffers[i], nullptr);
 		}
+	}
+
+	BufferAndMemory VulkanCore::CreateVertexBuffer(const void* vertices, size_t size)
+	{
+		VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		BufferAndMemory stagingVertexBuffer = CreateBuffer(size, bufferUsageFlags, memoryPropertyFlags);
+
+		void* mem;
+		VkDeviceSize offset = 0;
+		VkMemoryMapFlags flags = 0;
+		vkMapMemory(m_device, stagingVertexBuffer.m_memory, offset, stagingVertexBuffer.m_allocationSize, flags, &mem);
+
+		memcpy(mem, vertices, size);
+
+		vkUnmapMemory(m_device, stagingVertexBuffer.m_memory);
+
+		VkBufferUsageFlags bufferUsageFlagsVB = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		VkMemoryPropertyFlags memoryPropertyFlagsVB = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		BufferAndMemory vertexBuffer = CreateBuffer(size, bufferUsageFlagsVB, memoryPropertyFlagsVB);
+
+		CopyBuffer(stagingVertexBuffer.m_buffer, vertexBuffer.m_buffer, size);
+
+		stagingVertexBuffer.Destroy(m_device);
+
+		return vertexBuffer;
 	}
 
 	void VulkanCore::CreateInstance(const char* appName)
@@ -502,5 +531,81 @@ namespace sckVK
 		CHECK_VK_RESULT(res, "vkCreateCommandPool error\n");
 
 		printf("Command Buffer Pool Created\n");
+	}
+
+	void VulkanCore::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
+	{
+		BeginCommandBuffer(m_copyCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		VkBufferCopy bufferCopy = {
+			.srcOffset = 0,
+			.dstOffset = 0,
+			.size = size
+		};
+		vkCmdCopyBuffer(m_copyCommandBuffer, src, dst, 1, &bufferCopy);
+
+		vkEndCommandBuffer(m_copyCommandBuffer);
+
+		m_vkQueue.SubmitSync(m_copyCommandBuffer);
+
+		m_vkQueue.WaitIdle();
+	}
+
+	BufferAndMemory VulkanCore::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags)
+	{
+		BufferAndMemory buffer;
+
+		VkBufferCreateInfo bufferCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+			.size = size,
+			.usage = usage,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+		};
+
+		VkResult res = vkCreateBuffer(m_device, &bufferCreateInfo, nullptr, &buffer.m_buffer);
+		CHECK_VK_RESULT(res, "vkCreateBuffer error\n");
+
+		VkMemoryRequirements memReq;
+		vkGetBufferMemoryRequirements(m_device, buffer.m_buffer, &memReq);
+
+		buffer.m_allocationSize = memReq.size;
+
+		uint32_t memoryTypeIndex = GetMemoryTypeIndex(memReq.memoryTypeBits, memoryPropertyFlags);
+
+		VkMemoryAllocateInfo memoryAllocateInfo = {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+			.allocationSize = memReq.size,
+			.memoryTypeIndex = memoryTypeIndex
+		};
+
+		res = vkAllocateMemory(m_device, &memoryAllocateInfo, nullptr, &buffer.m_memory);
+		CHECK_VK_RESULT(res, "vkAllocateMemory error\n");
+
+		res = vkBindBufferMemory(m_device, buffer.m_buffer, buffer.m_memory, 0);
+		CHECK_VK_RESULT(res, "vkBindBufferMemory error\n");
+
+		return buffer;
+	}
+
+	uint32_t VulkanCore::GetMemoryTypeIndex(uint32_t memoryType, VkMemoryPropertyFlags memoryPropertyFlags)
+	{
+		const VkPhysicalDeviceMemoryProperties& prop = m_VulkanPhysicalDevices.SelectedDevice().m_memoryProps;
+
+		for (uint32_t i = 0; i < prop.memoryTypeCount; i++)
+		{
+			const VkMemoryType& phyMemProp = prop.memoryTypes[i];
+			uint32_t bit = (1 << i);
+			bool isCurrMemTypeSupported = (bit & memoryType);
+			bool hasRequiredMemProperties = ((phyMemProp.propertyFlags & memoryPropertyFlags) == memoryPropertyFlags);
+
+			if (isCurrMemTypeSupported && hasRequiredMemProperties)
+			{
+				return i;
+			}
+		}
+
+		printf("Cannot find memory type index for requested type %x and mem props %x\n", memoryType, memoryPropertyFlags);
+		exit(1);
+		return -1;
 	}
 }

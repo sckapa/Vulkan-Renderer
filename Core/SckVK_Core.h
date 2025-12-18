@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include "SckVK_VulkanPhysicalDevices.h"
 #include "SckVK_VulkanQueue.h"
+#include "SckVK_BufferAndMemory.h"
 
 namespace sckVK
 {
@@ -33,6 +34,8 @@ namespace sckVK
 		std::vector<VkFramebuffer> CreateFrameBuffers(VkRenderPass renderPass);
 		void DestroyFrameBuffers();
 
+		BufferAndMemory CreateVertexBuffer(const void* vertices, size_t size);
+
 	private:
 		void CreateInstance(const char* appName);
 		void CreateDebugCallback();
@@ -40,6 +43,9 @@ namespace sckVK
 		void CreateDevice();
 		void CreateSwapchain();
 		void CreateCommandBufferPool();
+		void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+		BufferAndMemory CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags);
+		uint32_t GetMemoryTypeIndex(uint32_t memoryType, VkMemoryPropertyFlags memoryPropertyFlags);
 
 		uint32_t m_swapchainImageCount = 0;
 
@@ -56,5 +62,6 @@ namespace sckVK
 		sckVK::VulkanQueue m_vkQueue;
 		VkSurfaceFormatKHR m_swapchainSurfaceFormat;
 		std::vector<VkFramebuffer> m_frameBuffers;
+		VkCommandBuffer m_copyCommandBuffer;
 	};
 }

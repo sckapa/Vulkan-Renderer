@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BufferAndMemory.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="SckVK_Utils.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -156,8 +157,10 @@
     <ClCompile Include="Wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SckVK_BufferAndMemory.h" />
     <ClInclude Include="SckVK_Core.h" />
     <ClInclude Include="SckVK_Shader.h" />
+    <ClInclude Include="SckVK_SimpleMesh.h" />
     <ClInclude Include="SckVK_Utils.h" />
     <ClInclude Include="SckVK_VulkanGraphicsPipeline.h" />
     <ClInclude Include="SckVK_VulkanPhysicalDevices.h" />
