@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string>
 #include <fstream>
+#include <vector>
 #include <vulkan/vulkan.h>
 
 #define	CHECK_VK_RESULT(res, msg) \

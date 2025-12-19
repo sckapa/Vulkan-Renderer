@@ -102,7 +102,7 @@ void VulkanApp::RecordCommandBuffers()
 
 		vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		m_graphicsPipeline->Bind(m_commandBuffers[i]);
+		m_graphicsPipeline->Bind(m_commandBuffers[i], i);
 
 		uint32_t vertexCount = 3;
 		uint32_t instanceCount = 1;
@@ -130,7 +130,7 @@ void VulkanApp::CreateShaders()
 
 void VulkanApp::CreatePipeline()
 {
-	m_graphicsPipeline = new sckVK::VulkanGraphicsPipeline(m_vkCore.GetDevice(), m_renderPass, m_window, m_fragmentShader, m_vertexShader);
+	m_graphicsPipeline = new sckVK::VulkanGraphicsPipeline(m_vkCore.GetDevice(), m_renderPass, m_window, m_fragmentShader, m_vertexShader, &m_simpleMesh, m_imageCount);
 }
 
 void VulkanApp::CreateVertexBuffer()

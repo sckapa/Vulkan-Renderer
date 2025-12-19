@@ -9,14 +9,23 @@ namespace sckVK
 	class VulkanGraphicsPipeline
 	{
 	public :
-		VulkanGraphicsPipeline(VkDevice device, VkRenderPass renderPass, GLFWwindow* window, VkShaderModule fragmentShader, VkShaderModule vertexShader, SimpleMesh* simpleMesh = nullptr);
+		VulkanGraphicsPipeline(VkDevice device, VkRenderPass renderPass, GLFWwindow* window, VkShaderModule fragmentShader, VkShaderModule vertexShader, const SimpleMesh* simpleMesh, uint32_t numImages);
 		~VulkanGraphicsPipeline();
 
-		void Bind(VkCommandBuffer buffer);
+		void Bind(VkCommandBuffer buffer, uint32_t imageIndex);
 
 	private:
+		void CreateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages);
+		void CreateDescriptorPool(uint32_t numImages);
+		void CreateDescriptorLayouts();
+		void AllocateDescriptorSets(uint32_t numImages);
+		void UpdateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages);
+
 		VkDevice m_device;
 		VkPipeline m_pipeline;
 		VkPipelineLayout m_pipelineLayout;
+		VkDescriptorPool m_descriptorPool;
+		VkDescriptorSetLayout m_descriptorSetLayout;
+		std::vector<VkDescriptorSet> m_descriptorSets;
 	};
 }
