@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
 	glfwSetKeyCallback(window, GLFW_KeyCallback);
 
-	VulkanApp App;
+	sckVK::VulkanApp App;
 	App.Init(APP_NAME, window);
 
 	while (!glfwWindowShouldClose(window))

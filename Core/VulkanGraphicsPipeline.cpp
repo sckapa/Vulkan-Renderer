@@ -3,11 +3,12 @@
 namespace sckVK
 {
 	VulkanGraphicsPipeline::VulkanGraphicsPipeline(VkDevice device, VkRenderPass renderPass, GLFWwindow* window, VkShaderModule fragmentShader, 
-													VkShaderModule vertexShader, const SimpleMesh* simpleMesh, uint32_t numImages)
+													VkShaderModule vertexShader, const SimpleMesh* simpleMesh, uint32_t numImages, std::vector<BufferAndMemory>& uniformBuffers, 
+													size_t uniformBufSize)
 	{
 		m_device = device;
 
-		CreateDescriptorSets(simpleMesh, numImages);
+		CreateDescriptorSets(simpleMesh, numImages, uniformBuffers, uniformBufSize);
 
 		VkPipelineShaderStageCreateInfo shaderStageCreateInfo[2] = {
 			{
@@ -150,19 +151,19 @@ namespace sckVK
 		vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[imageIndex], 0, nullptr);
 	}
 
-	void VulkanGraphicsPipeline::CreateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages)
+	void VulkanGraphicsPipeline::CreateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages, std::vector<BufferAndMemory> uniformBuffers, size_t uniformBufSize)
 	{
 		CreateDescriptorPool(numImages);
 		CreateDescriptorLayouts();
 		AllocateDescriptorSets(numImages);
-		UpdateDescriptorSets(simpleMesh, numImages);
+		UpdateDescriptorSets(simpleMesh, numImages, uniformBuffers, uniformBufSize);
 	}
 
 	void VulkanGraphicsPipeline::CreateDescriptorPool(uint32_t numImages)
 	{
 		VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-			.flags = 0,
+			.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
 			.maxSets = (uint32_t)numImages,
 			.poolSizeCount = 0,
 			.pPoolSizes = nullptr
@@ -178,14 +179,23 @@ namespace sckVK
 	{
 		std::vector<VkDescriptorSetLayoutBinding> bindings;
 
-		VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {
+		VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_VB = {
 			.binding = 0,
 			.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 			.descriptorCount = 1,
 			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
 		};
 
-		bindings.push_back(descriptorSetLayoutBinding);
+		bindings.push_back(descriptorSetLayoutBinding_VB);
+		
+		VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_UB = {
+			.binding = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.descriptorCount = 1,
+			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+		};
+
+		bindings.push_back(descriptorSetLayoutBinding_UB);
 
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -217,9 +227,9 @@ namespace sckVK
 		CHECK_VK_RESULT(res, "vkAllocateDescriptorSets error\n");
 	}
 
-	void VulkanGraphicsPipeline::UpdateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages)
+	void VulkanGraphicsPipeline::UpdateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages, std::vector<BufferAndMemory> uniformBuffers, size_t uniformBufSize)
 	{
-		VkDescriptorBufferInfo descriptorBufferInfo = {
+		VkDescriptorBufferInfo descriptorBufferInfo_VB = {
 			.buffer = simpleMesh->m_vertexBuffer.m_buffer,
 			.offset = 0,
 			.range = simpleMesh->m_vertexBufferSize
@@ -239,7 +249,27 @@ namespace sckVK
 					.dstArrayElement = 0,
 					.descriptorCount = 1,
 					.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-					.pBufferInfo = &descriptorBufferInfo
+					.pBufferInfo = &descriptorBufferInfo_VB
+				}
+			);
+
+			VkDescriptorBufferInfo descriptorBufferInfo_UB = {
+				.buffer = uniformBuffers[i].m_buffer,
+				.offset = 0,
+				.range = (VkDeviceSize)uniformBufSize
+			};
+
+			writeDescriptorSets.push_back
+			(
+				VkWriteDescriptorSet
+				{
+					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = m_descriptorSets[i],
+					.dstBinding = 1,
+					.dstArrayElement = 0,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+					.pBufferInfo = &descriptorBufferInfo_UB
 				}
 			);
 		}

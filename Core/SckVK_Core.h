@@ -36,6 +36,8 @@ namespace sckVK
 
 		BufferAndMemory CreateVertexBuffer(const void* vertices, size_t size);
 
+		std::vector<BufferAndMemory> CreateUniformBuffers(size_t size);
+
 	private:
 		void CreateInstance(const char* appName);
 		void CreateDebugCallback();
@@ -45,6 +47,7 @@ namespace sckVK
 		void CreateCommandBufferPool();
 		void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 		BufferAndMemory CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags);
+		BufferAndMemory CreateUniformBuffer(size_t size);
 		uint32_t GetMemoryTypeIndex(uint32_t memoryType, VkMemoryPropertyFlags memoryPropertyFlags);
 
 		uint32_t m_swapchainImageCount = 0;

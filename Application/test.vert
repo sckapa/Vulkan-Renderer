@@ -7,6 +7,7 @@ struct VertexData
 };
 
 layout (binding = 0) readonly buffer Vertices { VertexData data[]; } in_vertices;
+layout (binding = 1) readonly uniform UniformBuffer { mat4 wvp; } WVP;
 
 void main() 
 {
@@ -14,5 +15,5 @@ void main()
 
 	vec3 pos = vec3(vtx.x, vtx.y, vtx.z);
 
-	gl_Position = vec4( pos, 1.0 );
+	gl_Position = WVP.wvp * vec4( pos, 1.0 );
 }

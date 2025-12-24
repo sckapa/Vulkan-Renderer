@@ -226,6 +226,20 @@ namespace sckVK
 		return vertexBuffer;
 	}
 
+	std::vector<BufferAndMemory> VulkanCore::CreateUniformBuffers(size_t size)
+	{
+		std::vector<BufferAndMemory> UniformBuffers;
+
+		UniformBuffers.resize(m_Images.size());
+
+		for (int i = 0; i < UniformBuffers.size(); i++)
+		{
+			UniformBuffers[i] = CreateUniformBuffer(size);
+		}
+
+		return UniformBuffers;
+	}
+
 	void VulkanCore::CreateInstance(const char* appName)
 	{
 		std::vector<const char*> layers = {
@@ -585,6 +599,14 @@ namespace sckVK
 		CHECK_VK_RESULT(res, "vkBindBufferMemory error\n");
 
 		return buffer;
+	}
+
+	BufferAndMemory VulkanCore::CreateUniformBuffer(size_t size)
+	{
+		VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		VkMemoryPropertyFlags memPropFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+
+		return CreateBuffer(size, usage, memPropFlags);
 	}
 
 	uint32_t VulkanCore::GetMemoryTypeIndex(uint32_t memoryType, VkMemoryPropertyFlags memoryPropertyFlags)

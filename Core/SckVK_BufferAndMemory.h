@@ -12,5 +12,6 @@ namespace sckVK
 		VkDeviceSize m_allocationSize = 0;
 
 		void Destroy(VkDevice device);
+		void Update(VkDevice device, const void* data, size_t size);
 	};
 }
