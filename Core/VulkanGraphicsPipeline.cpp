@@ -154,7 +154,7 @@ namespace sckVK
 	void VulkanGraphicsPipeline::CreateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages, std::vector<BufferAndMemory> uniformBuffers, size_t uniformBufSize)
 	{
 		CreateDescriptorPool(numImages);
-		CreateDescriptorLayouts();
+		CreateDescriptorLayouts(simpleMesh->m_texture);
 		AllocateDescriptorSets(numImages);
 		UpdateDescriptorSets(simpleMesh, numImages, uniformBuffers, uniformBufSize);
 	}
@@ -175,7 +175,7 @@ namespace sckVK
 		printf("Descriptor Pool Created\n");
 	}
 
-	void VulkanGraphicsPipeline::CreateDescriptorLayouts()
+	void VulkanGraphicsPipeline::CreateDescriptorLayouts(VulkanTexture texture)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> bindings;
 
@@ -196,6 +196,15 @@ namespace sckVK
 		};
 
 		bindings.push_back(descriptorSetLayoutBinding_UB);
+		
+		VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_FS = {
+			.binding = 2,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorCount = 1,
+			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+		};
+
+		bindings.push_back(descriptorSetLayoutBinding_FS);
 
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -235,6 +244,12 @@ namespace sckVK
 			.range = simpleMesh->m_vertexBufferSize
 		};
 
+		VkDescriptorImageInfo descriptorImageInfo = {
+			.sampler = simpleMesh->m_texture.m_sampler,
+			.imageView = simpleMesh->m_texture.m_imageView,
+			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		};
+
 		std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 
 		for (uint32_t i = 0; i < numImages; i++)
@@ -270,6 +285,20 @@ namespace sckVK
 					.descriptorCount = 1,
 					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 					.pBufferInfo = &descriptorBufferInfo_UB
+				}
+			);
+
+			writeDescriptorSets.push_back
+			(
+				VkWriteDescriptorSet
+				{
+					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = m_descriptorSets[i],
+					.dstBinding = 2,
+					.dstArrayElement = 0,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.pImageInfo = &descriptorImageInfo
 				}
 			);
 		}

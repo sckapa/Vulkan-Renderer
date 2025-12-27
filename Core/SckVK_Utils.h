@@ -19,3 +19,4 @@ const char* MessageType(VkDebugUtilsMessageTypeFlagsEXT type);
 bool ReadFile(const char* fileName, std::string& data);
 void WriteBinaryFile(const char* pFilename, const void* pData, int size);
 char* ReadBinaryFile(const char* pFilename, int& size);
+bool HasStencilComponent(VkFormat Format);

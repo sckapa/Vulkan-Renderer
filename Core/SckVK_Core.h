@@ -36,6 +36,8 @@ namespace sckVK
 
 		BufferAndMemory CreateVertexBuffer(const void* vertices, size_t size);
 
+		void CreateTexture(const char* filePath, VulkanTexture& texture);
+
 		std::vector<BufferAndMemory> CreateUniformBuffers(size_t size);
 
 	private:
@@ -45,10 +47,18 @@ namespace sckVK
 		void CreateDevice();
 		void CreateSwapchain();
 		void CreateCommandBufferPool();
+		void SubmitCopyBuffer();
 		void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 		BufferAndMemory CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags);
 		BufferAndMemory CreateUniformBuffer(size_t size);
 		uint32_t GetMemoryTypeIndex(uint32_t memoryType, VkMemoryPropertyFlags memoryPropertyFlags);
+		void CreateTextureImageFromData(VulkanTexture& texture, const void* data, uint32_t imageWidth, uint32_t imageHeight, VkFormat format);
+		void CreateImage(VulkanTexture& texture, uint32_t imageWidth, uint32_t imageHeight, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties);
+		void UpdateImage(VulkanTexture& texture, uint32_t imageWidth, uint32_t imageHeight, VkFormat format, const void* data);
+		int GetBytesPerPixel(VkFormat format);
+		void TransitionImageLayout(VkImage& image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int layerCount);
+		void CopyBufferToImage(VkBuffer src, VkImage dst, uint32_t imageWidth, uint32_t imageHeight);
+		VkSampler CreateTextureSampler(VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode addressMode);
 
 		uint32_t m_swapchainImageCount = 0;
 

@@ -7,7 +7,7 @@ namespace sckVK
 		vkDestroyBuffer(device, m_buffer, nullptr);
 		vkFreeMemory(device, m_memory, nullptr);
 	}
-
+	
 	void BufferAndMemory::Update(VkDevice device, const void* data, size_t size)
 	{
 		void* mem = nullptr;
@@ -16,4 +16,13 @@ namespace sckVK
 		memcpy(mem, data, size);
 		vkUnmapMemory(device, m_memory);
 	}
+
+	void VulkanTexture::Destroy(VkDevice device)
+	{
+		vkDestroyImageView(device, m_imageView, nullptr);
+		vkDestroySampler(device, m_sampler, nullptr);
+		vkDestroyImage(device, m_image, nullptr);
+		vkFreeMemory(device, m_memory, nullptr);
+	}
+
 }

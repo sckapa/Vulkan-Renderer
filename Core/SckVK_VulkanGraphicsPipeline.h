@@ -18,7 +18,7 @@ namespace sckVK
 	private:
 		void CreateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages, std::vector<BufferAndMemory> uniformBuffers, size_t uniformBufSize);
 		void CreateDescriptorPool(uint32_t numImages);
-		void CreateDescriptorLayouts();
+		void CreateDescriptorLayouts(VulkanTexture texture);
 		void AllocateDescriptorSets(uint32_t numImages);
 		void UpdateDescriptorSets(const SimpleMesh* simpleMesh, uint32_t numImages, std::vector<BufferAndMemory> uniformBuffers, size_t uniformBufSize);
 

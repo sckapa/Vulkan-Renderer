@@ -15,6 +15,11 @@ namespace sckVK
 	{
 		printf("\n");
 
+		for (auto uniformBuffer : m_uniformBuffers)
+		{
+			uniformBuffer.Destroy(m_vkCore.GetDevice());
+		}
+
 		FreeCommandBuffers();
 		printf("Command Buffers Destroyed\n");
 
@@ -45,7 +50,7 @@ namespace sckVK
 		m_renderPass = m_vkCore.CreateRenderPass();
 		m_frameBuffers = m_vkCore.CreateFrameBuffers(m_renderPass);
 		CreateShaders();
-		CreateVertexBuffer();
+		CreateMesh();
 		CreateUniformBuffers();
 		CreatePipeline();
 		CreateCommandBuffers();
@@ -114,7 +119,7 @@ namespace sckVK
 
 			m_graphicsPipeline->Bind(m_commandBuffers[i], i);
 
-			uint32_t vertexCount = 3;
+			uint32_t vertexCount = 6;
 			uint32_t instanceCount = 1;
 			uint32_t firstVertex = 0;
 			uint32_t firstInstance = 0;
@@ -143,6 +148,12 @@ namespace sckVK
 		m_graphicsPipeline = new sckVK::VulkanGraphicsPipeline(m_vkCore.GetDevice(), m_renderPass, m_window, m_fragmentShader, m_vertexShader, &m_simpleMesh, m_imageCount, m_uniformBuffers, sizeof(UniformData));
 	}
 
+	void VulkanApp::CreateMesh()
+	{
+		CreateVertexBuffer();
+		LoadTexture();
+	}
+
 	void VulkanApp::CreateVertexBuffer()
 	{
 		struct Vertex
@@ -161,12 +172,21 @@ namespace sckVK
 		std::vector<Vertex> vertices =
 		{
 			Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-			Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}),
-			Vertex({0.0f, 1.0f, 0.0f}, {1.0f, 1.0f})
+			Vertex({-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}),
+			Vertex({1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}),
+			Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+			Vertex({1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}),
+			Vertex({1.0f, -1.0f, 0.0f}, {1.0f, 0.0f})
 		};
 
 		m_simpleMesh.m_vertexBufferSize = sizeof(vertices[0]) * vertices.size();
 		m_simpleMesh.m_vertexBuffer = m_vkCore.CreateVertexBuffer(vertices.data(), m_simpleMesh.m_vertexBufferSize);
+	}
+
+	void VulkanApp::LoadTexture()
+	{
+		m_simpleMesh.m_texture = sckVK::VulkanTexture();
+		m_vkCore.CreateTexture("abz.png", m_simpleMesh.m_texture);
 	}
 
 	void VulkanApp::CreateUniformBuffers()

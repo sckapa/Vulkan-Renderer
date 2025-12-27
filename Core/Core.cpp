@@ -1,6 +1,10 @@
 #include "SckVK_Core.h"
 #include <vulkan/vulkan.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_FAILURE_USERMSG
+#include "stb_image/stb_image.h"
+
 namespace sckVK
 {
 	VulkanCore::VulkanCore()
@@ -226,6 +230,34 @@ namespace sckVK
 		return vertexBuffer;
 	}
 
+	void VulkanCore::CreateTexture(const char* filePath, VulkanTexture& texture)
+	{
+		int imageWidth = 0;
+		int imageHeight = 0;
+		int imageChannels = 0;
+
+		stbi_uc* pixelData = stbi_load(filePath, &imageWidth, &imageHeight, &imageChannels, STBI_rgb_alpha);
+
+		if (!pixelData)
+		{
+			printf("Could not read file %s\n", filePath);
+			exit(1);
+		}
+
+		VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+		CreateTextureImageFromData(texture, pixelData, imageWidth, imageHeight, format);
+
+		stbi_image_free(pixelData);
+
+		VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+		texture.m_imageView = sckVK::CreateImageView(m_device, texture.m_image, format, aspectFlags);
+
+		VkFilter magFilter = VK_FILTER_LINEAR;
+		VkFilter minFilter = VK_FILTER_LINEAR;
+		VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		texture.m_sampler = CreateTextureSampler(magFilter, minFilter, addressMode);
+	}
+
 	std::vector<BufferAndMemory> VulkanCore::CreateUniformBuffers(size_t size)
 	{
 		std::vector<BufferAndMemory> UniformBuffers;
@@ -439,39 +471,6 @@ namespace sckVK
 		}
 	}
 
-	static VkImageView CreateImageView(VkDevice device, VkImage image, VkImageViewType viewType, VkFormat format,
-										VkImageAspectFlags aspectFlags, uint32_t levelCount, uint32_t layerCount)
-	{
-		VkImageView imageView;
-
-		VkImageViewCreateInfo imageViewCreateInfo = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-			.pNext = nullptr,
-			.flags = 0,
-			.image = image,
-			.viewType = viewType,
-			.format = format,
-			.components = {
-				.r = VK_COMPONENT_SWIZZLE_R,
-				.g = VK_COMPONENT_SWIZZLE_G,
-				.b = VK_COMPONENT_SWIZZLE_B,
-				.a = VK_COMPONENT_SWIZZLE_A
-			},
-			.subresourceRange = {
-				.aspectMask = aspectFlags,
-				.baseMipLevel = 0,
-				.levelCount = levelCount,
-				.baseArrayLayer = 0,
-				.layerCount = layerCount
-			}
-		};
-
-		VkResult res = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageView);
-		CHECK_VK_RESULT(res, "vkCreateImageView error\n");
-
-		return imageView;
-	}
-
 	void VulkanCore::CreateSwapchain()
 	{
 		VkSurfaceCapabilitiesKHR surfaceCaps = m_VulkanPhysicalDevices.SelectedDevice().m_surfaceCapabilities;
@@ -526,8 +525,7 @@ namespace sckVK
 		uint32_t layerCount = 1;
 		for (uint32_t i = 0; i < m_Images.size(); i++)
 		{
-			m_ImageViews[i] = CreateImageView(m_device, m_Images[i], VK_IMAGE_VIEW_TYPE_2D, m_swapchainSurfaceFormat.format,
-												VK_IMAGE_ASPECT_COLOR_BIT, mipLevel, layerCount);
+			m_ImageViews[i] = sckVK::CreateImageView(m_device, m_Images[i], m_swapchainSurfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
 		}
 		printf("Image Views Created\n");
 	}
@@ -537,7 +535,7 @@ namespace sckVK
 		VkCommandPoolCreateInfo commandPoolCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 			.pNext = nullptr,
-			.flags = 0,
+			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 			.queueFamilyIndex = m_queueFamily
 		};
 
@@ -545,6 +543,15 @@ namespace sckVK
 		CHECK_VK_RESULT(res, "vkCreateCommandPool error\n");
 
 		printf("Command Buffer Pool Created\n");
+	}
+
+	void VulkanCore::SubmitCopyBuffer()
+	{
+		vkEndCommandBuffer(m_copyCommandBuffer);
+
+		m_vkQueue.SubmitSync(m_copyCommandBuffer);
+
+		m_vkQueue.WaitIdle();
 	}
 
 	void VulkanCore::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
@@ -558,11 +565,7 @@ namespace sckVK
 		};
 		vkCmdCopyBuffer(m_copyCommandBuffer, src, dst, 1, &bufferCopy);
 
-		vkEndCommandBuffer(m_copyCommandBuffer);
-
-		m_vkQueue.SubmitSync(m_copyCommandBuffer);
-
-		m_vkQueue.WaitIdle();
+		SubmitCopyBuffer();
 	}
 
 	BufferAndMemory VulkanCore::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags)
@@ -629,5 +632,170 @@ namespace sckVK
 		printf("Cannot find memory type index for requested type %x and mem props %x\n", memoryType, memoryPropertyFlags);
 		exit(1);
 		return -1;
+	}
+
+	void VulkanCore::CreateTextureImageFromData(VulkanTexture& texture, const void* data, uint32_t imageWidth, uint32_t imageHeight, VkFormat format)
+	{
+		VkImageUsageFlags flags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		VkMemoryPropertyFlags memProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		CreateImage(texture, imageWidth, imageHeight, format, flags, memProps);
+
+		UpdateImage(texture, imageWidth, imageHeight, format, data);
+	}
+
+	void VulkanCore::CreateImage(VulkanTexture& texture, uint32_t imageWidth, uint32_t imageHeight, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties)
+	{
+		VkImageCreateInfo imageCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+			.flags = 0,
+			.imageType = VK_IMAGE_TYPE_2D,
+			.format = format,
+			.extent = VkExtent3D {.width = imageWidth, .height = imageHeight, .depth = 1},
+			.mipLevels = 1,
+			.arrayLayers = 1,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.tiling = VK_IMAGE_TILING_OPTIMAL,
+			.usage = usage,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.queueFamilyIndexCount = 0,
+			.pQueueFamilyIndices = nullptr,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+		};
+
+		VkResult res = vkCreateImage(m_device, &imageCreateInfo, nullptr, &texture.m_image);
+		CHECK_VK_RESULT(res, "vkCreateImage error\n");
+
+		VkMemoryRequirements memRequirements = { 0 };
+		vkGetImageMemoryRequirements(m_device, texture.m_image, &memRequirements);
+
+		uint32_t memTypeIndex = GetMemoryTypeIndex(memRequirements.memoryTypeBits, memProperties);
+
+		VkMemoryAllocateInfo memAllocateInfo = {
+			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+			.pNext = nullptr,
+			.allocationSize = memRequirements.size,
+			.memoryTypeIndex = memTypeIndex
+		};
+
+		res = vkAllocateMemory(m_device, &memAllocateInfo, nullptr, &texture.m_memory);
+		CHECK_VK_RESULT(res, "vkAllocateMemory error\n");
+
+		res = vkBindImageMemory(m_device, texture.m_image, texture.m_memory, 0);
+		CHECK_VK_RESULT(res, "vkBindImageMemory error\n");
+	}
+
+	void VulkanCore::UpdateImage(VulkanTexture& texture, uint32_t imageWidth, uint32_t imageHeight, VkFormat format, const void* data)
+	{
+		int bytesPerPixel = GetBytesPerPixel(format);
+
+		VkDeviceSize layerSize = imageWidth * imageHeight * bytesPerPixel;
+		int layerCount = 1;
+
+		VkDeviceSize imageSize = layerSize * layerCount;
+		VkBufferUsageFlags flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		VkMemoryPropertyFlags memPropFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		BufferAndMemory stagingBuffer = CreateBuffer(imageSize, flags, memPropFlags);
+
+		stagingBuffer.Update(m_device, data, imageSize);
+
+		TransitionImageLayout(texture.m_image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount);
+
+		CopyBufferToImage(stagingBuffer.m_buffer, texture.m_image, imageWidth, imageHeight);
+
+		TransitionImageLayout(texture.m_image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, layerCount);
+
+		stagingBuffer.Destroy(m_device);
+	}
+
+	int VulkanCore::GetBytesPerPixel(VkFormat format)
+	{
+		switch (format)
+		{
+		case VK_FORMAT_R8_SINT:
+			return 1;
+		case VK_FORMAT_R8_UNORM:
+			return 2;
+		case VK_FORMAT_R16_SFLOAT:
+			return 4;
+		case VK_FORMAT_R16G16_SFLOAT:
+			return 4;
+		case VK_FORMAT_R16G16_SNORM:
+			return 4;
+		case VK_FORMAT_B8G8R8A8_UNORM:
+			return 4;
+		case VK_FORMAT_R8G8B8A8_UNORM:
+			return 4;
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+			return 4 * sizeof(uint16_t);
+		case VK_FORMAT_R32G32B32A32_SFLOAT:
+			return 4 * sizeof(float);
+		default:
+			printf("Unknown format %d\n", format);
+			exit(1);
+		}
+
+		return 0;
+	}
+
+	void VulkanCore::TransitionImageLayout(VkImage& image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int layerCount)
+	{
+		BeginCommandBuffer(m_copyCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		sckVK::ImageMemBarrier(m_copyCommandBuffer, image, format, oldLayout, newLayout, layerCount);
+
+		SubmitCopyBuffer();
+	}
+
+	void VulkanCore::CopyBufferToImage(VkBuffer src, VkImage dst, uint32_t imageWidth, uint32_t imageHeight)
+	{
+		BeginCommandBuffer(m_copyCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		VkBufferImageCopy bufferImageCopy = {
+			.bufferOffset = 0,
+			.bufferRowLength = 0,
+			.bufferImageHeight = 0,
+			.imageSubresource = VkImageSubresourceLayers
+			{
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.mipLevel = 0,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			},
+			.imageOffset = VkOffset3D {.x = 0,.y = 0,.z = 0},
+			.imageExtent = VkExtent3D {.width = imageWidth,.height = imageHeight, .depth = 1}
+		};
+
+		vkCmdCopyBufferToImage(m_copyCommandBuffer, src, dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferImageCopy);
+
+		SubmitCopyBuffer();
+	}
+
+	VkSampler VulkanCore::CreateTextureSampler(VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode addressMode)
+	{
+		VkSamplerCreateInfo samplerCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.magFilter = magFilter,
+			.minFilter = minFilter,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+			.addressModeU = addressMode,
+			.addressModeV = addressMode,
+			.addressModeW = addressMode,
+			.mipLodBias = 0.0f,
+			.anisotropyEnable = VK_FALSE,
+			.maxAnisotropy = 1,
+			.compareEnable = VK_FALSE,
+			.compareOp = VK_COMPARE_OP_ALWAYS,
+			.minLod = 0.0f,
+			.maxLod = 0.0f,
+			.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+			.unnormalizedCoordinates = VK_FALSE
+		};
+
+		VkSampler sampler;
+
+		VkResult res = vkCreateSampler(m_device, &samplerCreateInfo, nullptr, &sampler);
+		CHECK_VK_RESULT(res, "vkCreateSampler error\n");
+
+		return sampler;
 	}
 }

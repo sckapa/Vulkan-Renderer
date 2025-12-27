@@ -27,7 +27,9 @@ namespace sckVK
 		void RecordCommandBuffers();
 		void CreateShaders();
 		void CreatePipeline();
+		void CreateMesh();
 		void CreateVertexBuffer();
+		void LoadTexture();
 		void CreateUniformBuffers();
 		void UpdateUniformBuffer(uint32_t imageIndex);
 
