@@ -7,8 +7,10 @@ namespace sckVK
 		glm::mat4 WVP;
 	};
 
-	VulkanApp::VulkanApp()
+	VulkanApp::VulkanApp(int width, int height)
 	{
+		m_windowWidth = width;
+		m_windowHeight = height;
 	}
 
 	VulkanApp::~VulkanApp()
@@ -40,11 +42,11 @@ namespace sckVK
 		m_simpleMesh.Destroy(m_vkCore.GetDevice());
 	}
 
-	void VulkanApp::Init(const char* appName, GLFWwindow* window)
+	void VulkanApp::Init(const char* appName)
 	{
-		m_window = window;
+		m_window = InitGLFW_Vulkan(m_windowWidth, m_windowHeight, appName);
 
-		m_vkCore.Init(appName, window);
+		m_vkCore.Init(appName, m_window);
 		m_imageCount = m_vkCore.GetSwapchainImageCount();
 		m_vulkanQueue = m_vkCore.GetQueue();
 		m_renderPass = m_vkCore.CreateRenderPass();
@@ -55,6 +57,27 @@ namespace sckVK
 		CreatePipeline();
 		CreateCommandBuffers();
 		RecordCommandBuffers();
+
+		CreateCamera();
+
+		SetGLFWCallbacks_Vulkan(m_window, this);
+	}
+
+	void VulkanApp::Execute()
+	{
+		float currTime = (float)glfwGetTime();
+
+		while (!glfwWindowShouldClose(m_window))
+		{
+			float Time = (float)glfwGetTime();
+			float dt = Time - currTime;
+			m_camera->Update(dt);
+			RenderScene();
+			currTime = Time;
+			glfwPollEvents();
+		}
+
+		glfwTerminate();
 	}
 
 	void VulkanApp::RenderScene()
@@ -101,8 +124,8 @@ namespace sckVK
 				},
 				.extent =
 				{
-				.width = WINDOW_WIDTH,
-				.height = WINDOW_HEIGHT
+					.width = (uint32_t)m_windowWidth,
+					.height = (uint32_t)m_windowHeight
 				}
 			},
 			.clearValueCount = 1,
@@ -171,12 +194,12 @@ namespace sckVK
 
 		std::vector<Vertex> vertices =
 		{
-			Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-			Vertex({-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}),
-			Vertex({1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}),
-			Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-			Vertex({1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}),
-			Vertex({1.0f, -1.0f, 0.0f}, {1.0f, 0.0f})
+			Vertex({-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f}),
+			Vertex({-1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}),
+			Vertex({1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}),
+			Vertex({-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f}),
+			Vertex({1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}),
+			Vertex({1.0f, -1.0f, 1.0f}, {1.0f, 0.0f})
 		};
 
 		m_simpleMesh.m_vertexBufferSize = sizeof(vertices[0]) * vertices.size();
@@ -198,10 +221,77 @@ namespace sckVK
 	{
 		static float rotAngle = 0.0f;
 		glm::mat4 rotate = glm::mat4(1.0f);
-		glm::mat4 rotation = glm::rotate(rotate, glm::radians(rotAngle), glm::normalize(glm::vec3(0.0f, 0.0, 1.0f)));
-		rotAngle += 0.001f;
+		glm::mat4 rotation = glm::rotate(rotate, glm::radians(rotAngle), glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
+		rotAngle += 0.000f;
 
-		glm::mat4 WVP = rotation;
+		glm::mat4 vp = m_camera->GetVPMatrix();
+
+		glm::mat4 WVP = vp * rotation;
 		m_uniformBuffers[imageIndex].Update(m_vkCore.GetDevice(), &WVP, sizeof(WVP));
+	}
+
+	void VulkanApp::CreateCamera()
+	{
+		float fov = 45.0f;
+		float zNear = 0.1f;
+		float zFar = 1000.0f;
+
+		if ((m_windowWidth == 0) || (m_windowHeight == 0))
+		{
+			printf("Invalid window size\n");
+			exit(1);
+		}
+
+		if (m_camera)
+		{
+			printf("Camera already created\n");
+			exit(1);
+		}
+
+		ProjectionInfo projInfo = {
+			.fov = fov,
+			.width = (float)m_windowWidth,
+			.height = (float)m_windowHeight,
+			.zNear = zNear,
+			.zFar = zFar
+		};
+
+		glm::vec3 pos(0.0f, 0.0f, 0.0f);
+		glm::vec3 target(0.0f, 0.0f, 1.0f);
+		glm::vec3 up(0.0f, 1.0f, 0.0f);
+
+		m_camera = new Camera(pos, target, up, projInfo);
+	}
+
+	void VulkanApp::Key(GLFWwindow* window, int key, int scanCode, int action, int mods)
+	{
+		bool handled = true;
+
+		switch (key)
+		{
+		case GLFW_KEY_ESCAPE:
+			glfwDestroyWindow(window);
+			glfwTerminate();
+			exit(0);
+
+		default:
+			handled = false;
+			break;
+		}
+
+		if (!handled)
+		{
+			m_camera->KeyPressedHandler(m_camera->m_cameraMovement, key, scanCode, action, mods);
+		}
+	}
+
+	void VulkanApp::MouseMove(double xPos, double yPos)
+	{
+		m_camera->MouseMovedHandler((double)xPos, -(double)yPos);
+	}
+
+	void VulkanApp::MouseButton(int button, int action, int mods)
+	{
+		m_camera->MouseButtonHandler(button, action, mods);
 	}
 }

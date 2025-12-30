@@ -1,8 +1,5 @@
 #pragma once
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "SckVK_VulkanPhysicalDevices.h"
@@ -76,5 +73,8 @@ namespace sckVK
 		VkSurfaceFormatKHR m_swapchainSurfaceFormat;
 		std::vector<VkFramebuffer> m_frameBuffers;
 		VkCommandBuffer m_copyCommandBuffer;
+
+		int m_windowWidth = 0;
+		int m_windowHeight = 0;
 	};
 }

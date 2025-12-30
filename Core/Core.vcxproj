@@ -148,7 +148,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BufferAndMemory.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Core.cpp" />
+    <ClCompile Include="GLFWCallbacks.cpp" />
     <ClCompile Include="SckVK_Utils.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="VulkanGraphicsPipeline.cpp" />
@@ -157,8 +159,10 @@
     <ClCompile Include="Wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="SckVK_BufferAndMemory.h" />
     <ClInclude Include="SckVK_Core.h" />
+    <ClInclude Include="SckVK_GLFWCallbacks.h" />
     <ClInclude Include="SckVK_Shader.h" />
     <ClInclude Include="SckVK_SimpleMesh.h" />
     <ClInclude Include="SckVK_Utils.h" />

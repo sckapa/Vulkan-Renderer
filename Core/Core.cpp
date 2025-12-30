@@ -59,6 +59,8 @@ namespace sckVK
 
 	void VulkanCore::Init(const char* appName, GLFWwindow* window)
 	{
+		glfwGetWindowSize(window, &m_windowWidth, &m_windowHeight);
+
 		CreateInstance(appName);
 		CreateDebugCallback();
 		CreateSurface(window);
@@ -182,8 +184,8 @@ namespace sckVK
 				.renderPass = renderPass,
 				.attachmentCount = 1,
 				.pAttachments = &m_ImageViews[i],
-				.width = WINDOW_WIDTH,
-				.height = WINDOW_HEIGHT,
+				.width = (uint32_t)m_windowWidth,
+				.height = (uint32_t)m_windowHeight,
 				.layers = 1
 			};
 

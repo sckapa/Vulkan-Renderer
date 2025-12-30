@@ -133,3 +133,59 @@ bool HasStencilComponent(VkFormat Format)
 	return ((Format == VK_FORMAT_D32_SFLOAT_S8_UINT) ||
 		(Format == VK_FORMAT_D24_UNORM_S8_UINT));
 }
+
+GLFWwindow* InitGLFW_Vulkan(int width, int height, const char* title)
+{
+	if (!glfwInit())
+	{
+		exit(EXIT_FAILURE);
+	}
+
+	if (!glfwVulkanSupported())
+	{
+		exit(EXIT_FAILURE);
+	}
+
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+	GLFWwindow* window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+
+	if (!window)
+	{
+		glfwTerminate();
+		exit(EXIT_FAILURE);
+	}
+
+	return window;
+}
+
+void SetGLFWCallbacks_Vulkan(GLFWwindow* window, sckVK::GLFWCallbacks* callbacks)
+{
+	glfwSetWindowUserPointer(window, callbacks);
+
+	glfwSetKeyCallback(window, GLFW_KeyCallback);
+	glfwSetCursorPosCallback(window, GLFW_CursorCallback);
+	glfwSetMouseButtonCallback(window, GLFW_MouseButtonCallback);
+}
+
+void GLFW_KeyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods)
+{
+	sckVK::GLFWCallbacks* callbacks = (sckVK::GLFWCallbacks*)glfwGetWindowUserPointer(window);
+
+	callbacks->Key(window, key, scanCode, action, mods);
+}
+
+void GLFW_CursorCallback(GLFWwindow* window, double xPos, double yPos)
+{
+	sckVK::GLFWCallbacks* callbacks = (sckVK::GLFWCallbacks*)glfwGetWindowUserPointer(window);
+
+	callbacks->MouseMove(xPos, yPos);
+}
+
+void GLFW_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	sckVK::GLFWCallbacks* callbacks = (sckVK::GLFWCallbacks*)glfwGetWindowUserPointer(window);
+
+	callbacks->MouseButton(button, action, mods);
+}
