@@ -111,6 +111,21 @@ namespace sckVK
 		VkResult res = vkCreatePipelineLayout(m_device, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
 		CHECK_VK_RESULT(res, "vkCreatePipelineLayout error\n");
 
+		VkPipelineDepthStencilStateCreateInfo depthStateCreateInfo = {
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.depthTestEnable = VK_TRUE,
+			.depthWriteEnable = VK_TRUE,
+			.depthCompareOp = VK_COMPARE_OP_LESS,
+			.depthBoundsTestEnable = VK_FALSE,
+			.stencilTestEnable = VK_FALSE,
+			.front = {},
+			.back = {},
+			.minDepthBounds = 0.0f,
+			.maxDepthBounds = 1.0f
+		};
+
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			.pNext = nullptr,
@@ -122,6 +137,7 @@ namespace sckVK
 			.pViewportState = &viewportStateCreateInfo,
 			.pRasterizationState = &rasterizationStateCreateInfo,
 			.pMultisampleState = &multisampleStateCreateInfo,
+			.pDepthStencilState = &depthStateCreateInfo,
 			.pColorBlendState = &colorBlendStateCreateInfo,
 			.layout = m_pipelineLayout,
 			.renderPass = renderPass,

@@ -106,11 +106,21 @@ namespace sckVK
 
 	void VulkanApp::RecordCommandBuffers()
 	{
-		VkClearColorValue clearColorValue = { 1.0f, 0.0f, 0.0f, 0.0f };
-
-		VkClearValue clearValue = {
-			.color = clearColorValue
+		VkClearValue colorClearValue = {
+			.color = { 1.0f, 0.0f, 0.0f, 1.0f }
 		};
+
+		VkClearValue depthClearValue = {
+			.depthStencil =
+			{
+				.depth = 1.0f,
+				.stencil = 0
+			}
+		};
+
+		std::vector<VkClearValue> clearValues;
+		clearValues.push_back(colorClearValue);
+		clearValues.push_back(depthClearValue);
 
 		VkRenderPassBeginInfo renderPassBeginInfo = {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -128,8 +138,8 @@ namespace sckVK
 					.height = (uint32_t)m_windowHeight
 				}
 			},
-			.clearValueCount = 1,
-			.pClearValues = &clearValue
+			.clearValueCount = (uint32_t)clearValues.size(),
+			.pClearValues = clearValues.data()
 		};
 
 		for (uint32_t i = 0; i < m_commandBuffers.size(); i++)
@@ -142,7 +152,7 @@ namespace sckVK
 
 			m_graphicsPipeline->Bind(m_commandBuffers[i], i);
 
-			uint32_t vertexCount = 6;
+			uint32_t vertexCount = 9;
 			uint32_t instanceCount = 1;
 			uint32_t firstVertex = 0;
 			uint32_t firstInstance = 0;
@@ -199,7 +209,11 @@ namespace sckVK
 			Vertex({1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}),
 			Vertex({-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f}),
 			Vertex({1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}),
-			Vertex({1.0f, -1.0f, 1.0f}, {1.0f, 0.0f})
+			Vertex({1.0f, -1.0f, 1.0f}, {1.0f, 0.0f}),
+
+			Vertex({-1.0f, -1.0f, 5.0f}, {0.0f, 0.0f}),
+			Vertex({1.0f, 1.0f, 5.0f}, {1.0f, 1.0f}),
+			Vertex({1.0f, -1.0f, 5.0f}, {1.0f, 0.0f})
 		};
 
 		m_simpleMesh.m_vertexBufferSize = sizeof(vertices[0]) * vertices.size();

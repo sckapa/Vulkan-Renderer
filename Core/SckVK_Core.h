@@ -56,6 +56,7 @@ namespace sckVK
 		void TransitionImageLayout(VkImage& image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int layerCount);
 		void CopyBufferToImage(VkBuffer src, VkImage dst, uint32_t imageWidth, uint32_t imageHeight);
 		VkSampler CreateTextureSampler(VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode addressMode);
+		void CreateDepthImages();
 
 		uint32_t m_swapchainImageCount = 0;
 
@@ -68,6 +69,7 @@ namespace sckVK
 		VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
 		std::vector<VkImage> m_Images;
 		std::vector<VkImageView> m_ImageViews;
+		std::vector<VulkanTexture> m_depthImages;
 		VkCommandPool m_VkCommandPool = VK_NULL_HANDLE;
 		sckVK::VulkanQueue m_vkQueue;
 		VkSurfaceFormatKHR m_swapchainSurfaceFormat;

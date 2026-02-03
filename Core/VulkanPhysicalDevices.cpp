@@ -69,6 +69,8 @@ namespace sckVK
 			m_physicalDevices[i].m_surfaceFormats.resize(surfaceFormatCount);
 
 			vkGetPhysicalDeviceSurfaceFormatsKHR(PhysicalDevice, surface, &surfaceFormatCount, m_physicalDevices[i].m_surfaceFormats.data());
+
+			m_physicalDevices[i].m_depthFormat = GetDepthFormat(PhysicalDevice);
 		}
 	}
 
@@ -99,5 +101,44 @@ namespace sckVK
 		}
 
 		return m_physicalDevices[m_deviceIndex];
+	}
+
+	const VkFormat VulkanPhysicalDevices::GetDepthFormat(VkPhysicalDevice device) const
+	{
+		std::vector<VkFormat> candidates =
+		{
+			VK_FORMAT_D32_SFLOAT,
+			VK_FORMAT_D32_SFLOAT_S8_UINT,
+			VK_FORMAT_D24_UNORM_S8_UINT
+		};
+
+		VkFormat depthFormat = FindSupportedFormat(device, candidates, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+		return depthFormat;
+	}
+
+	const VkFormat VulkanPhysicalDevices::FindSupportedFormat(VkPhysicalDevice device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
+	{
+		for (int i = 0; i < candidates.size(); i++)
+		{
+			VkFormat format = candidates[i];
+			VkFormatProperties props;
+			vkGetPhysicalDeviceFormatProperties(device, format, &props);
+
+			if (tiling == VK_IMAGE_TILING_LINEAR)
+			{
+				if ((props.linearTilingFeatures & features) == features)
+				{
+					return format;
+				}
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL)
+			{
+				if ((props.optimalTilingFeatures & features) == features)
+				{
+					return format;
+				}
+			}
+		}
 	}
 }

@@ -16,6 +16,7 @@ namespace sckVK
 		VkPhysicalDeviceMemoryProperties m_memoryProps;
 		std::vector<VkPresentModeKHR> m_presentModes;
 		VkPhysicalDeviceFeatures m_physicalDeviceFeatures;
+		VkFormat m_depthFormat;
 	};
 
 	class VulkanPhysicalDevices
@@ -31,6 +32,9 @@ namespace sckVK
 		const PhysicalDevice& SelectedDevice() const;
 
 	private:
+		const VkFormat GetDepthFormat(VkPhysicalDevice device) const;
+		const VkFormat FindSupportedFormat(VkPhysicalDevice device, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
+
 		std::vector<PhysicalDevice> m_physicalDevices;
 		int m_deviceIndex = -1;
 	};
